@@ -12,7 +12,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["node", "vite/client", "vitest/globals"],
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] }
   },
