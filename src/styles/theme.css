@@ -1,0 +1,137 @@
+/**
+ * 主题设计令牌：组件样式一律通过 CSS 变量引用，禁止硬编码颜色。
+ * 创建者：zhenghq
+ */
+:root {
+  color-scheme: light;
+
+  /* 背景层级 */
+  --bg-app: #eef2f7;
+  --bg-gradient-a: #dbe6f3;
+  --bg-gradient-b: #eef2f7;
+  --bg-surface: #ffffff;
+  --bg-surface-raised: #ffffff;
+  --bg-secondary: #f5f7fb;
+  --bg-tertiary: #e9edf5;
+  --bg-hover: #e2e8f2;
+  --bg-active: #d6deeb;
+  --bg-overlay: rgba(15, 23, 42, 0.42);
+
+  /* 文本 */
+  --text-primary: #16233b;
+  --text-secondary: #55637d;
+  --text-tertiary: #8a97ac;
+  --text-inverse: #ffffff;
+
+  /* 边框与分隔 */
+  --border-default: #d5dcea;
+  --border-strong: #b9c4d8;
+  --border-subtle: #e6ebf4;
+
+  /* 主题色 */
+  --accent: #2f6df6;
+  --accent-hover: #2559d0;
+  --accent-soft: rgba(47, 109, 246, 0.12);
+  --accent-contrast: #ffffff;
+
+  /* 状态色 */
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.14);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.14);
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.12);
+
+  /* 棋盘 */
+  --board-wood-a: #e8c48a;
+  --board-wood-b: #dcb273;
+  --board-line: #8a6a3c;
+  --board-line-strong: #6d5227;
+  --board-shadow: rgba(80, 56, 20, 0.28);
+  --board-star: #6d5227;
+  --board-coordinate: #6d5227;
+  --stone-black-a: #4a4f59;
+  --stone-black-b: #10141c;
+  --stone-white-a: #ffffff;
+  --stone-white-b: #d3d9e4;
+  --stone-white-edge: #aab3c2;
+  --stone-shadow: rgba(15, 23, 42, 0.35);
+  --last-move: #ef4444;
+  --hover-ghost: rgba(15, 23, 42, 0.22);
+  --territory-black: rgba(16, 20, 28, 0.16);
+  --territory-white: rgba(255, 255, 255, 0.55);
+
+  /* 阴影与圆角 */
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.1);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+
+  /* 排版与动效 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-app: #0b1220;
+  --bg-gradient-a: #131f36;
+  --bg-gradient-b: #0b1220;
+  --bg-surface: #131c2e;
+  --bg-surface-raised: #182338;
+  --bg-secondary: #1a2438;
+  --bg-tertiary: #212d45;
+  --bg-hover: #26334d;
+  --bg-active: #2d3c58;
+  --bg-overlay: rgba(2, 6, 23, 0.62);
+
+  --text-primary: #eef2f9;
+  --text-secondary: #a9b6cc;
+  --text-tertiary: #74829b;
+  --text-inverse: #0b1220;
+
+  --border-default: #2b3850;
+  --border-strong: #3c4c6a;
+  --border-subtle: #212c42;
+
+  --accent: #5b8dff;
+  --accent-hover: #7aa2ff;
+  --accent-soft: rgba(91, 141, 255, 0.18);
+  --accent-contrast: #0b1220;
+
+  --success: #34d399;
+  --success-soft: rgba(52, 211, 153, 0.16);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.16);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.16);
+
+  --board-wood-a: #8a6a3c;
+  --board-wood-b: #6f5430;
+  --board-line: #3f2f18;
+  --board-line-strong: #2c2010;
+  --board-shadow: rgba(0, 0, 0, 0.5);
+  --board-star: #2c2010;
+  --board-coordinate: #d8c39a;
+  --stone-black-a: #4b5563;
+  --stone-black-b: #05080f;
+  --stone-white-a: #f4f7fc;
+  --stone-white-b: #c3ccdb;
+  --stone-white-edge: #8e99ab;
+  --stone-shadow: rgba(0, 0, 0, 0.55);
+  --last-move: #f87171;
+  --hover-ghost: rgba(255, 255, 255, 0.32);
+  --territory-black: rgba(0, 0, 0, 0.32);
+  --territory-white: rgba(244, 247, 252, 0.6);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
