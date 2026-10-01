@@ -35,6 +35,68 @@ describe('game', () => {
     expect(second.state.score).not.toBeNull()
   })
 
+  it('落子后若对方无合法着法则自动停一手', () => {
+    const state = createGame(3)
+    state.currentPlayer = WHITE
+    state.board[0] = 0
+    state.board[1] = 0
+    state.board[2] = 0
+    state.board[3] = WHITE
+    state.board[4] = 0
+    state.board[5] = WHITE
+    state.board[6] = 0
+    state.board[7] = WHITE
+    state.board[8] = 0
+
+    const result = playMove(state, { x: 1, y: 0 })
+
+    expect(result.error).toBeUndefined()
+    expect(result.state.currentPlayer).toBe(WHITE)
+    expect(result.state.moves).toHaveLength(2)
+    expect(result.state.moves[1].point).toBeNull()
+    expect(result.state.consecutivePasses).toBe(1)
+  })
+
+  it('双方都无合法着法时停一手立即数子终局', () => {
+    const state = createGame(2)
+    state.board.fill(BLACK)
+    state.board[0] = WHITE
+
+    const result = passMove(state)
+
+    expect(result.state.status).toBe('scored')
+    expect(result.state.score).not.toBeNull()
+    expect(result.state.endReason).toBe('score')
+  })
+
+  it('自动停一手后对手继续下，重新落子会清空连续停一手计数', () => {
+    const state = createGame(3)
+    state.currentPlayer = WHITE
+    state.board[0] = 0
+    state.board[1] = 0
+    state.board[2] = 0
+    state.board[3] = WHITE
+    state.board[4] = 0
+    state.board[5] = WHITE
+    state.board[6] = 0
+    state.board[7] = WHITE
+    state.board[8] = 0
+
+    const afterWhite = playMove(state, { x: 1, y: 0 }).state
+    expect(afterWhite.currentPlayer).toBe(WHITE)
+    expect(afterWhite.consecutivePasses).toBe(1)
+
+    const afterWhiteMove = playMove(afterWhite, { x: 2, y: 0 }).state
+    expect(afterWhiteMove.currentPlayer).toBe(WHITE)
+    expect(afterWhiteMove.consecutivePasses).toBe(1)
+    expect(afterWhiteMove.moves.map((move) => move.point)).toEqual([
+      { x: 1, y: 0 },
+      null,
+      { x: 2, y: 0 },
+      null,
+    ])
+  })
+
   it('认输判对方获胜', () => {
     const result = resignGame(createGame(9), BLACK)
     expect(result.state.status).toBe('scored')

@@ -15,7 +15,7 @@ import {
   placeStone,
   pointIndex,
 } from '@/core/board'
-import { createsKo, isBoardFull } from '@/core/rules'
+import { createsKo, hasLegalMove, isBoardFull } from '@/core/rules'
 import { scoreChinese } from '@/core/scoring'
 import type { GameState, MoveRecord } from '@/core/types'
 
@@ -147,6 +147,28 @@ export function playMove(state: GameState, point: Point): ActionResult {
   })
 
   if (isBoardFull(nextBoard)) return { state: finishGame(nextState, 'score') }
+  // 若对手已无合法落点，则自动为其停一手，避免人机对局卡在无子可下的局面。
+  if (!hasLegalMove(nextBoard, size, nextState.currentPlayer, nextState.koPoint)) {
+    const passedState = advance(nextState, {
+      moves: [
+        ...nextState.moves,
+        {
+          index: nextState.moves.length + 1,
+          player: nextState.currentPlayer,
+          point: null,
+          captured: 0,
+          koPoint: null,
+        },
+      ],
+      currentPlayer: opponent(nextState.currentPlayer),
+      koPoint: null,
+      consecutivePasses: 1,
+    })
+    if (!hasLegalMove(passedState.board, size, passedState.currentPlayer, passedState.koPoint)) {
+      return { state: finishGame(passedState, 'score') }
+    }
+    return { state: passedState }
+  }
   return { state: nextState }
 }
 
@@ -171,6 +193,9 @@ export function passMove(state: GameState): ActionResult {
     consecutivePasses: state.consecutivePasses + 1,
   })
   if (nextState.consecutivePasses >= 2) return { state: finishGame(nextState, 'score') }
+  if (!hasLegalMove(nextState.board, state.size, nextState.currentPlayer, nextState.koPoint)) {
+    return { state: finishGame(nextState, 'score') }
+  }
   return { state: nextState }
 }
 

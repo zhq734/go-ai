@@ -8,6 +8,7 @@ import {
   type Player,
   type Point,
   findGroup,
+  isLegalMove,
   isSuicide,
   opponent,
   placeStone,
@@ -82,6 +83,24 @@ export function createsKo(
  */
 export function isBoardFull(board: Board): boolean {
   return !board.includes(EMPTY)
+}
+
+/**
+ * 判断指定一方是否还有合法落点（排除劫争禁着点与自杀点）。
+ * @param board 棋盘。
+ * @param size 棋盘边长。
+ * @param player 待判断的一方。
+ * @param koPoint 当前劫争禁着点。
+ * @returns 是否存在至少一个合法落点。
+ */
+export function hasLegalMove(board: Board, size: number, player: Player, koPoint: Point | null): boolean {
+  for (let index = 0; index < board.length; index += 1) {
+    if (board[index] !== EMPTY) continue
+    const point = { x: index % size, y: Math.floor(index / size) }
+    if (koPoint && koPoint.x === point.x && koPoint.y === point.y) continue
+    if (isLegalMove(board, size, point, player)) return true
+  }
+  return false
 }
 
 /**
