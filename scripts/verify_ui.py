@@ -1,4 +1,4 @@
-"""端到端验收脚本：覆盖 19 路切换、停一手终局、认输浮层与控制台报错。
+"""端到端验收脚本：覆盖 19 路切换、数子终局弹窗、认输弹窗、关闭与重开及控制台报错。
 
 使用方式：
     python3 scripts/verify_ui.py [base_url]
@@ -47,8 +47,18 @@ def main() -> int:
         page.wait_for_timeout(400)
         page.get_by_role("button", name="停一手", exact=True).click()
         page.wait_for_timeout(600)
-        assert_true(page.locator(".overlay").is_visible(), "终局浮层未出现")
-        assert_true("黑" in page.locator(".overlay__subtitle").inner_text(), "终局比分未显示")
+        assert_true(page.locator(".result").is_visible(), "终局弹窗未出现")
+        assert_true("数子终局" in page.locator(".result__reason").inner_text(), "终局原因未显示")
+        assert_true(page.locator(".result__stat").count() >= 4, "终局数据项不足")
+        assert_true("黑棋" in page.locator(".result__stats").inner_text(), "终局比分未显示")
+
+        # 关闭弹窗后可查看棋盘，并通过侧栏按钮重新打开
+        page.get_by_role("button", name="查看棋盘", exact=True).click()
+        page.wait_for_timeout(300)
+        assert_true(not page.locator(".result").is_visible(), "弹窗关闭失败")
+        page.get_by_role("button", name="查看结果", exact=True).click()
+        page.wait_for_timeout(300)
+        assert_true(page.locator(".result").is_visible(), "弹窗重开失败")
 
         # 再来一局后切回人机模式并认输
         page.get_by_role("button", name="再来一局", exact=True).click()
@@ -57,8 +67,15 @@ def main() -> int:
         page.wait_for_timeout(300)
         page.get_by_role("button", name="认输", exact=True).click()
         page.wait_for_timeout(400)
-        assert_true(page.locator(".overlay").is_visible(), "认输浮层未出现")
-        assert_true("AI 获胜" in page.locator(".overlay__title").inner_text(), "认输结果不正确")
+        assert_true(page.locator(".result").is_visible(), "认输弹窗未出现")
+        assert_true("你输了" in page.locator(".result__title").inner_text(), "认输结果不正确")
+        assert_true("认输" in page.locator(".result__reason").inner_text(), "认输原因不正确")
+        assert_true("result--lose" in (page.locator(".result").get_attribute("class") or ""), "失败配色未生效")
+
+        # 关闭弹窗后继续验证主题与模式切换
+        page.get_by_role("button", name="查看棋盘", exact=True).click()
+        page.wait_for_timeout(300)
+        assert_true(not page.locator(".result").is_visible(), "认输弹窗关闭失败")
 
         # 暗色主题与双人模式
         page.locator(".theme-toggle").click()
@@ -70,7 +87,7 @@ def main() -> int:
         browser.close()
 
     assert_true(not errors, f"控制台出现错误：{errors}")
-    print("UI 验收通过：19 路切换 / 数子终局 / 认输浮层 / 主题与模式切换均正常")
+    print("UI 验收通过：19 路切换 / 数子终局弹窗 / 关闭与重开 / 认输弹窗 / 主题与模式切换均正常")
     return 0
 
 

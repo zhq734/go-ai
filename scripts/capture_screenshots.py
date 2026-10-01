@@ -1,4 +1,4 @@
-"""生成 README 所需的界面截图（桌面明亮 / 桌面暗色 / 移动端）。
+"""生成 README 所需的界面截图（桌面明亮 / 桌面暗色 / 移动端 / 终局弹窗）。
 
 使用方式：
     python3 scripts/capture_screenshots.py [base_url]
@@ -59,6 +59,12 @@ def main() -> int:
         set_theme(page, "暗色")
         page.wait_for_timeout(600)
         page.screenshot(path=str(OUTPUT / "screenshot-dark.png"))
+
+        # 终局弹窗：切回明亮主题后认输，展示胜负弹窗
+        set_theme(page, "明亮")
+        page.get_by_role("button", name="认输", exact=True).click()
+        page.wait_for_timeout(700)
+        page.screenshot(path=str(OUTPUT / "screenshot-result.png"))
         desktop.close()
 
         mobile = browser.new_context(

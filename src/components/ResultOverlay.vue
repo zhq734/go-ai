@@ -1,106 +1,217 @@
 <script setup lang="ts">
 /**
- * 终局结果浮层：展示胜负、比分与操作按钮。
+ * 终局结果弹窗：全屏遮罩展示胜负、比分、手数与操作按钮。
  * 创建者：zhenghq
  */
-import { computed } from 'vue'
-import { BLACK } from '@/core/board'
+import { computed, onBeforeUnmount, watch } from 'vue'
+import { summarizeResult } from '@/core/result'
 import { useGameStore } from '@/stores/game'
 
 const store = useGameStore()
-const state = computed(() => store.state)
-const visible = computed(() => state.value.status === 'scored')
 
-const title = computed(() => {
-  if (!visible.value) return ''
-  if (state.value.endReason === 'resign') {
-    return state.value.winner === store.humanColor ? '你赢了！' : 'AI 获胜'
-  }
-  if (state.value.winner === 'D') return '和棋'
-  const winnerName = state.value.winner === BLACK ? '黑棋' : '白棋'
-  if (store.preferences.mode === 'ai') {
-    return state.value.winner === store.humanColor ? `你赢了！（${winnerName}）` : `AI 获胜（${winnerName}）`
-  }
-  return `${winnerName}胜`
+const summary = computed(() =>
+  summarizeResult(store.state, {
+    mode: store.preferences.mode,
+    humanColor: store.humanColor,
+  }),
+)
+
+const visible = computed(() => Boolean(summary.value) && store.resultOpen)
+
+/** 情绪对应的图标。 */
+const icon = computed(() => {
+  if (!summary.value) return ''
+  if (summary.value.tone === 'win') return '🏆'
+  if (summary.value.tone === 'lose') return '💪'
+  return '🤝'
 })
 
-const subtitle = computed(() => {
-  if (state.value.endReason === 'resign') return '对方中盘认输'
-  const score = state.value.score
-  if (!score) return ''
-  return `黑 ${score.black.toFixed(1)} : ${score.white.toFixed(1)} 白`
+/** 处理键盘事件：Esc 关闭弹窗。 */
+function onKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') store.hideResult()
+}
+
+watch(visible, (open) => {
+  if (typeof window === 'undefined') return
+  if (open) window.addEventListener('keydown', onKeydown)
+  else window.removeEventListener('keydown', onKeydown)
+})
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <template>
-  <Transition name="fade">
-    <div v-if="visible" class="overlay" role="dialog" aria-modal="true">
-      <div class="overlay__card">
-        <p class="overlay__eyebrow">对局结束</p>
-        <h2 class="overlay__title">{{ title }}</h2>
-        <p v-if="subtitle" class="overlay__subtitle">{{ subtitle }}</p>
-        <div class="overlay__actions">
-          <button class="overlay__button overlay__button--primary" type="button" @click="store.newGame()">
-            再来一局
-          </button>
-          <button class="overlay__button" type="button" @click="store.undo()">悔棋复盘</button>
+  <Teleport to="body">
+    <Transition name="pop">
+      <div
+        v-if="visible && summary"
+        class="result"
+        :class="`result--${summary.tone}`"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="result-title"
+      >
+        <div class="result__backdrop" @click="store.hideResult()" />
+        <div class="result__card">
+          <span class="result__icon" aria-hidden="true">{{ icon }}</span>
+          <p class="result__eyebrow">{{ summary.eyebrow }}</p>
+          <h2 id="result-title" class="result__title">{{ summary.title }}</h2>
+          <p class="result__reason">{{ summary.reason }}</p>
+
+          <dl class="result__stats">
+            <div
+              v-for="item in summary.stats"
+              :key="item.label"
+              class="result__stat"
+              :class="{ 'is-highlight': item.highlight }"
+            >
+              <dt>{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          </dl>
+
+          <p class="result__footnote">{{ summary.footnote }}</p>
+
+          <div class="result__actions">
+            <button class="result__button result__button--primary" type="button" @click="store.newGame()">
+              再来一局
+            </button>
+            <button class="result__button" type="button" @click="store.hideResult()">查看棋盘</button>
+            <button class="result__button" type="button" :disabled="!store.canUndo" @click="store.undo()">
+              悔棋复盘
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
-.overlay {
-  position: absolute;
+.result {
+  position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: var(--bg-overlay);
-  backdrop-filter: blur(3px);
-  z-index: 20;
+  z-index: 60;
 }
 
-.overlay__card {
-  width: min(320px, 100%);
-  padding: 26px 22px;
+.result__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(4px);
+}
+
+.result__card {
+  position: relative;
+  width: min(400px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 26px 24px 22px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-default);
+  border-top: 4px solid var(--result-accent);
   background: var(--bg-surface-raised);
   box-shadow: var(--shadow-lg);
   text-align: center;
 }
 
-.overlay__eyebrow {
+.result--win {
+  --result-accent: var(--success);
+  --result-accent-soft: var(--success-soft);
+}
+
+.result--lose {
+  --result-accent: var(--danger);
+  --result-accent-soft: var(--danger-soft);
+}
+
+.result--draw {
+  --result-accent: var(--accent);
+  --result-accent-soft: var(--accent-soft);
+}
+
+.result__icon {
+  display: block;
+  font-size: 40px;
+  line-height: 1;
+}
+
+.result__eyebrow {
+  margin-top: 12px;
   font-size: 12px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   color: var(--text-tertiary);
 }
 
-.overlay__title {
-  margin-top: 10px;
-  font-size: 22px;
+.result__title {
+  margin-top: 8px;
+  font-size: 26px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--result-accent);
 }
 
-.overlay__subtitle {
+.result__reason {
   margin-top: 8px;
-  font-family: var(--font-mono);
   font-size: 14px;
   color: var(--text-secondary);
 }
 
-.overlay__actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 22px;
+.result__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
 }
 
-.overlay__button {
-  flex: 1;
+.result__stat {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: var(--bg-secondary);
+}
+
+.result__stat dt {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.result__stat dd {
+  margin: 4px 0 0;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.result__stat.is-highlight {
+  border-color: var(--result-accent);
+  background: var(--result-accent-soft);
+}
+
+.result__stat.is-highlight dd {
+  color: var(--result-accent);
+}
+
+.result__footnote {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.result__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.result__button {
   padding: 11px 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
@@ -108,30 +219,59 @@ const subtitle = computed(() => {
   color: var(--text-primary);
   font-size: 13px;
   font-weight: 600;
-  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), opacity var(--transition-fast);
 }
 
-.overlay__button:hover {
+.result__button:hover:not(:disabled) {
   background: var(--bg-hover);
 }
 
-.overlay__button--primary {
+.result__button:disabled {
+  opacity: 0.45;
+}
+
+.result__button--primary {
   border-color: transparent;
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
-.overlay__button--primary:hover {
+.result__button--primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
-.fade-enter-active,
-.fade-leave-active {
+.pop-enter-active {
   transition: opacity var(--transition-base);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.pop-leave-active {
+  transition: opacity var(--transition-base);
+}
+
+.pop-enter-from,
+.pop-leave-to {
   opacity: 0;
+}
+
+.pop-enter-active .result__card {
+  animation: result-rise 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes result-rise {
+  from {
+    transform: translateY(14px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .result__title {
+    font-size: 23px;
+  }
 }
 </style>

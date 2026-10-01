@@ -30,6 +30,14 @@ AI 基于 **Negamax 搜索**，配合 **Alpha-Beta 剪枝**、**迭代加深**�
 
 <div align="center">
 
+| 终局弹窗 |
+| :---: |
+| <img src="docs/images/screenshot-result.png" width="720" alt="终局弹窗" /> |
+
+</div>
+
+<div align="center">
+
 | 移动端自适应 |
 | :---: |
 | <img src="docs/images/screenshot-mobile.png" width="360" alt="移动端" /> |
@@ -65,7 +73,7 @@ AI 基于 **Negamax 搜索**，配合 **Alpha-Beta 剪枝**、**迭代加深**�
 - **多主题**：明亮 / 暗色 / 跟随系统三态，全部颜色通过 CSS 变量管理。
 - **页面缓存**：`keep-alive` + Pinia 持久化，切换页面不丢失对局状态。
 - **对局记录**：棋谱列表自动滚动，显示手数、颜色、坐标与提子数。
-- **终局浮层**：展示胜负与比分，支持再来一局与悔棋复盘。
+- **终局弹窗**：全屏遮罩展示胜负、情绪配色、比分 / 贴目 / 手数 / 提子，支持再来一局、查看棋盘与悔棋复盘，关闭后可从侧栏「查看结果」重新打开。
 - **音效**：WebAudio 合成落子 / 提子 / 终局音，无需外部资源。
 
 ---
@@ -96,7 +104,7 @@ AI 基于 **Negamax 搜索**，配合 **Alpha-Beta 剪枝**、**迭代加深**�
 项目遵循 TDD 红-绿-重构流程，测试覆盖棋盘规则、劫争、数子、对局流程、AI 决策与自我对弈。
 
 ```bash
-npm test          # Vitest 单元测试（33 项）
+npm test          # Vitest 单元测试（41 项）
 npm run typecheck # vue-tsc 类型检查
 npm run build     # 生产构建
 ```
@@ -107,7 +115,7 @@ npm run build     # 生产构建
 python3 scripts/verify_ui.py http://127.0.0.1:4173/
 ```
 
-覆盖 19 路切换、数子终局、认输浮层、主题与模式切换，并断言无控制台报错。
+覆盖 19 路切换、数子终局弹窗、弹窗关闭与重开、认输弹窗、主题与模式切换，并断言无控制台报错。
 
 ---
 

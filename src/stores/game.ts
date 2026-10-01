@@ -63,6 +63,7 @@ export const useGameStore = defineStore('go-game', () => {
     () => preferences.value.mode === 'ai' && state.value.status === 'playing' && state.value.currentPlayer === aiColor.value,
   )
   const message = ref<string>('')
+  const resultOpen = ref(false)
 
   const { thinking, lastStats, think, cancel } = useGoWorker()
   const sound = useSound()
@@ -97,6 +98,7 @@ export const useGameStore = defineStore('go-game', () => {
     cancel()
     state.value = createGame(preferences.value.boardSize)
     message.value = ''
+    resultOpen.value = false
   }
 
   /**
@@ -115,7 +117,10 @@ export const useGameStore = defineStore('go-game', () => {
     const record = result.state.moves[result.state.moves.length - 1]
     if (record && record.captured > 0) sound.playCapture()
     else sound.playPlace()
-    if (result.state.status === 'scored') sound.playFinish()
+    if (result.state.status === 'scored') {
+      sound.playFinish()
+      resultOpen.value = true
+    }
     state.value = result.state
     void maybeAiMove()
   }
@@ -130,7 +135,10 @@ export const useGameStore = defineStore('go-game', () => {
       return
     }
     message.value = ''
-    if (result.state.status === 'scored') sound.playFinish()
+    if (result.state.status === 'scored') {
+      sound.playFinish()
+      resultOpen.value = true
+    }
     state.value = result.state
     void maybeAiMove()
   }
@@ -144,6 +152,7 @@ export const useGameStore = defineStore('go-game', () => {
     const loser = player ?? state.value.currentPlayer
     state.value = resignGame(state.value, loser).state
     message.value = ''
+    resultOpen.value = true
     sound.playFinish()
   }
 
@@ -161,6 +170,7 @@ export const useGameStore = defineStore('go-game', () => {
     }
     state.value = next
     message.value = ''
+    resultOpen.value = false
   }
 
   /** 触发 AI 落子（若轮到 AI）。 */
@@ -182,8 +192,21 @@ export const useGameStore = defineStore('go-game', () => {
     const record = applied.state.moves[applied.state.moves.length - 1]
     if (record && record.captured > 0) sound.playCapture()
     else sound.playPlace()
-    if (applied.state.status === 'scored') sound.playFinish()
+    if (applied.state.status === 'scored') {
+      sound.playFinish()
+      resultOpen.value = true
+    }
     state.value = applied.state
+  }
+
+  /** 重新打开终局结果弹窗。 */
+  function showResult(): void {
+    if (state.value.status === 'scored') resultOpen.value = true
+  }
+
+  /** 关闭终局结果弹窗，便于查看棋盘。 */
+  function hideResult(): void {
+    resultOpen.value = false
   }
 
   /**
@@ -210,10 +233,14 @@ export const useGameStore = defineStore('go-game', () => {
   /** 是否允许悔棋。 */
   const canUndo = computed(() => state.value.history.length > 0 && !thinking.value)
 
+  /** 是否已终局，可用于重新查看结果。 */
+  const canShowResult = computed(() => state.value.status === 'scored')
+
   return {
     preferences,
     state,
     message,
+    resultOpen,
     humanColor,
     aiColor,
     isAiTurn,
@@ -222,12 +249,15 @@ export const useGameStore = defineStore('go-game', () => {
     currentName,
     lastMove,
     canUndo,
+    canShowResult,
     isHuman,
     newGame,
     play,
     pass,
     resign,
     undo,
+    showResult,
+    hideResult,
     updatePreferences,
   }
 })

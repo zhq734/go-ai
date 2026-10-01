@@ -24,6 +24,14 @@ function resign(): void {
     <button class="actions__button" type="button" :disabled="!store.canUndo" @click="store.undo()">悔棋</button>
     <button class="actions__button" type="button" :disabled="!canPlay" @click="store.pass()">停一手</button>
     <button class="actions__button actions__button--danger" type="button" :disabled="!canPlay" @click="resign">认输</button>
+    <button
+      v-if="store.canShowResult"
+      class="actions__button actions__button--result"
+      type="button"
+      @click="store.showResult()"
+    >
+      查看结果
+    </button>
   </div>
 </template>
 
@@ -71,5 +79,16 @@ function resign(): void {
 
 .actions__button--danger:hover:not(:disabled) {
   background: var(--danger-soft);
+}
+
+.actions__button--result {
+  grid-column: 1 / -1;
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.actions__button--result:hover:not(:disabled) {
+  background: var(--bg-hover);
 }
 </style>
