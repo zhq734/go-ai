@@ -173,30 +173,48 @@ export const useGameStore = defineStore('go-game', () => {
     resultOpen.value = false
   }
 
-  /** 触发 AI 落子（若轮到 AI）。 */
+  /**
+   * 触发 AI 落子。
+   * 说明：当对手无合法着法时核心逻辑会自动替对手停一手，行棋权随即回到 AI，
+   * 因此这里循环处理 AI 的连续回合，直至终局或轮到人类，避免对局卡死。
+   */
   async function maybeAiMove(): Promise<void> {
-    if (!isAiTurn.value) return
-    const snapshot = state.value
-    const result = await think({
-      board: snapshot.board.slice(),
-      size: snapshot.size,
-      player: snapshot.currentPlayer,
-      difficulty: preferences.value.difficulty,
-      koPoint: snapshot.koPoint ? { ...snapshot.koPoint } : null,
-    })
-    if (!result) return
-    // 思考期间局面已变化则丢弃结果。
-    if (state.value !== snapshot || state.value.status !== 'playing') return
-    const applied = playMove(state.value, result.point)
-    if (applied.error) return
-    const record = applied.state.moves[applied.state.moves.length - 1]
-    if (record && record.captured > 0) sound.playCapture()
-    else sound.playPlace()
-    if (applied.state.status === 'scored') {
-      sound.playFinish()
-      resultOpen.value = true
+    let guard = 0
+    const maxSteps = state.value.board.length + 4
+    while (isAiTurn.value && guard < maxSteps) {
+      guard += 1
+      const snapshot = state.value
+      const result = await think({
+        board: snapshot.board.slice(),
+        size: snapshot.size,
+        player: snapshot.currentPlayer,
+        difficulty: preferences.value.difficulty,
+        koPoint: snapshot.koPoint ? { ...snapshot.koPoint } : null,
+      })
+      // 思考期间局面已变化则丢弃结果。
+      if (state.value !== snapshot || state.value.status !== 'playing') return
+      if (!result) {
+        // AI 无合法着法时自动停一手，交由核心逻辑推进或直接结算。
+        const passed = passMove(state.value)
+        if (passed.error) return
+        if (passed.state.status === 'scored') {
+          sound.playFinish()
+          resultOpen.value = true
+        }
+        state.value = passed.state
+        continue
+      }
+      const applied = playMove(state.value, result.point)
+      if (applied.error) return
+      const record = applied.state.moves[applied.state.moves.length - 1]
+      if (record && record.captured > 0) sound.playCapture()
+      else sound.playPlace()
+      if (applied.state.status === 'scored') {
+        sound.playFinish()
+        resultOpen.value = true
+      }
+      state.value = applied.state
     }
-    state.value = applied.state
   }
 
   /** 重新打开终局结果弹窗。 */
